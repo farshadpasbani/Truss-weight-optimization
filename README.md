@@ -22,19 +22,67 @@ Trusses can be classified into two main types based on their geometry and load-c
 The analysis of trusses typically involves the following steps:
 
 #### 4.1. Calculation of Member Stiffness Matrix
+The following shows the relation between nodal forces and displecaments of a truss member:
+
+![image](https://github.com/farshadpasbani/Truss-weight-optimization/assets/40645548/a1e62d33-3560-4c2c-8030-ece99e155ff9)
+
+```math
+\begin{Bmatrix}
+\hat{f}_1x\\ 
+\hat{f}_2x\\ 
+\end{Bmatrix}
+=
+\frac{EA}{L}
+\begin{bmatrix}
+ 1 & -1\\ 
+-1 & 1
+\end{bmatrix}
+\begin{Bmatrix}
+\hat{d}_1x\\ 
+\hat{d}_2x\\ 
+\end{Bmatrix}
+```
+where:
+- $\( \hat{f}_1x \)$ is the axial force at node 1.
+- $\( \hat{f}_2x \)$ is the axial force at node 2.
+- $\( \hat{d}_1x \)$ is the displacement of node 1 in local coordinates.
+- $\( \hat{d}_2x \)$ is the displacement of node 2 in local coordinates.
+- $\( E \)$ is the Young's modulus of the material.
+- $\( A \)$ is the cross-sectional area of the member.
+- $\( L \)$ is the length of the member.
+
+As truss members do not undergo shear or bending, it can be assumed that $\( \hat{f}_1y \) = \( \hat{f}_2y \) = 0$. However, this does not prevent the nodes to displace in $\( \hat{y} \)$-axis.
 Each truss member's stiffness matrix represents its resistance to deformation under axial loads. For a truss element, the local stiffness matrix $\( k \)$ in local coordinates can be derived as:
 
-$$
+```math
 k = \frac{EA}{L} \begin{bmatrix}
 1 & -1 \\
 -1 & 1
 \end{bmatrix}
-$$
-
-where:
-- $\( E \)$ is the Young's modulus of the material.
-- $\( A \)$ is the cross-sectional area of the member.
-- $\( L \)$ is the length of the member.
+```
+By adding $\( \hat{f}_1y \)$, $\( \hat{f}_2y \)$ and their respective displacements in $\( \hat{y} \)$-axis, and expanding on the above we have:
+```math
+\begin{Bmatrix}
+\hat{f}_1x\\ 
+\hat{f}_1y\\
+\hat{f}_2x\\ 
+\hat{f}_2y
+\end{Bmatrix}
+=
+\frac{EA}{L}
+\begin{bmatrix}
+1 & 0 & -1 & 0\\
+0 & 0 & 0 & 0\\
+-1 & 0 & 1 & 0\\
+0 & 0 & 0 & 0
+\end{bmatrix}
+\begin{Bmatrix}
+\hat{d}_1x\\ 
+\hat{d}_1y\\
+\hat{d}_2x\\ 
+\hat{d}_2y
+\end{Bmatrix}
+```
 
 #### 4.2. Transformation to Global Coordinates
 The local stiffness matrix must be transformed to the global coordinate system using the direction cosines of the member. For a truss element oriented at an angle $\theta$ with respect to the global $x$-axis, the transformation matrix $\( T \)$ is:
@@ -56,7 +104,17 @@ $$
 K_e = T^T k T
 $$
 
+By performing the above multiplication we have:
 
+```math
+K_e = \frac{EA}{L}
+\begin{bmatrix}
+C^2 & C \cdot S & -C^2 & -C \cdot S \\
+C \cdot S & S^2 & -C \cdot S & -S^2 \\
+-C^2 & -C \cdot S & C^2 & C \cdot S \\
+-C \cdot S & -S^2 & C \cdot S & S^2
+\end{bmatrix}
+```
 
 #### 4.3. Assembly of Global Stiffness Matrix
 The global stiffness matrix for the entire truss is assembled by summing the contributions of individual element stiffness matrices into the appropriate positions, based on the connectivity of the nodes.
