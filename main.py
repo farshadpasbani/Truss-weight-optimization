@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 from truss_analysis import *
 from gwo import grey_wolf_optimization
 
-
 # Truss definition:
 A = np.ones(16)
 material_density = 0.00000785  # kg/mm3
