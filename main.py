@@ -8,44 +8,34 @@ from differential_evolution import differential_evolution
 Connect = np.array(
     [
         [1, 2],
-        [1, 4],
+        [1, 3],
         [2, 3],
         [2, 4],
-        [2, 5],
+        [3, 4],
         [3, 5],
-        [3, 6],
         [4, 5],
-        [4, 7],
+        [4, 6],
         [5, 6],
-        [5, 7],
-        [5, 8],
-        [6, 9],
-        [6, 8],
-        [7, 8],
-        [8, 9],
     ]
 )
-forces = [(0, 6000, 10000), (3, 6000, 10000)]
+forces = [(0, 0, -10000), (2, 0, -10000)]
 Node = np.array(
     [
         [0, 0],
         [0, 1200],
-        [0, 2400],
         [1200, 0],
         [1200, 1200],
-        [1200, 2400],
         [2400, 0],
         [2400, 1200],
-        [2400, 2400],
     ]
 )
-restrains = np.array([7, 8, 9])
+restrains = np.array([5, 6])
 num_agents = 10
 max_iter = 100
-bounds = (10, 10000)
-material_density = 0.00000785
-max_displacement = 30
-allowable_stress = 355
+bounds = (10, 1000)
+material_density = 0.0000078  # kg/mm3
+max_displacement = 4
+allowable_stress = 35500
 
 optimized_truss_gwo, fitness_gwo, trends_gwo = grey_wolf_optimization(
     analyze_truss,

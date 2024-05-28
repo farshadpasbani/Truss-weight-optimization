@@ -49,7 +49,7 @@ def analyze_truss(
     plot_flag,
 ):
     num_dof = 2 * len(node_coordinates)
-    youngs_modulus = 20500
+    youngs_modulus = 210000
     force_vector = np.zeros(num_dof)
     for node_idx, fx, fy in forces:
         force_vector[2 * node_idx] = fx
@@ -101,12 +101,45 @@ def analyze_truss(
     if plot_flag == 1:
         plt.figure(figsize=(10, 8))
         ax = plt.gca()
+
+        # Plot undeformed truss
         for i in range(len(connectivity_matrix)):
             start_node = connectivity_matrix[i, 0] - 1
             end_node = connectivity_matrix[i, 1] - 1
             x_values = [node_coordinates[start_node, 0], node_coordinates[end_node, 0]]
             y_values = [node_coordinates[start_node, 1], node_coordinates[end_node, 1]]
-            plt.plot(x_values, y_values, "ko-", lw=2, markersize=5)
+            plt.plot(
+                x_values,
+                y_values,
+                "ko-",
+                lw=2,
+                markersize=5,
+                label="Undeformed" if i == 0 else "",
+            )
+
+        # Calculate deformed coordinates
+        deformed_coordinates = node_coordinates + displacements.reshape(-1, 2)
+
+        # Plot deformed truss
+        for i in range(len(connectivity_matrix)):
+            start_node = connectivity_matrix[i, 0] - 1
+            end_node = connectivity_matrix[i, 1] - 1
+            x_values = [
+                deformed_coordinates[start_node, 0],
+                deformed_coordinates[end_node, 0],
+            ]
+            y_values = [
+                deformed_coordinates[start_node, 1],
+                deformed_coordinates[end_node, 1],
+            ]
+            plt.plot(
+                x_values,
+                y_values,
+                "ro-",
+                lw=2,
+                markersize=5,
+                label="Deformed" if i == 0 else "",
+            )
 
         for idx, coord in enumerate(node_coordinates):
             plt.text(
@@ -125,7 +158,11 @@ def analyze_truss(
                 node_coordinates[node_idx, 1],
                 "rs",
                 markersize=10,
-                label="Restrained Node",
+                label=(
+                    "Restrained Node"
+                    if "Restrained Node" not in plt.gca().get_legend_handles_labels()[1]
+                    else ""
+                ),
             )
 
         for node_idx, fx, fy in forces:
@@ -152,9 +189,7 @@ def analyze_truss(
         plt.ylabel("Y Coordinate (mm)")
         plt.title("Truss Structure Visualization")
         plt.grid(True)
-        handles, labels = ax.get_legend_handles_labels()
-        if "Restrained Node" not in labels:
-            plt.legend()
+        plt.legend()
         plt.show()
 
     element_stresses = np.zeros((len(connectivity_matrix), 4))
@@ -187,60 +222,3 @@ def analyze_truss(
     truss_weight = np.sum(cross_sectional_areas * element_lengths) * material_density
 
     return truss_penalized_weight, truss_weight
-
-
-if __name__ == "__main__":
-    FunctionEvaluation = 0
-    A = np.ones(16)
-
-    Connect = np.array(
-        [
-            [1, 2],
-            [1, 4],
-            [2, 3],
-            [2, 4],
-            [2, 5],
-            [3, 5],
-            [3, 6],
-            [4, 5],
-            [4, 7],
-            [5, 6],
-            [5, 7],
-            [5, 8],
-            [6, 9],
-            [6, 8],
-            [7, 8],
-            [8, 9],
-        ]
-    )
-    forces = [(0, 6000, 10000), (3, 6000, 10000)]
-    Node = np.array(
-        [
-            [0, 0],
-            [0, 1200],
-            [0, 2400],
-            [1200, 0],
-            [1200, 1200],
-            [1200, 2400],
-            [2400, 0],
-            [2400, 1200],
-            [2400, 2400],
-        ]
-    )
-    restrains = np.array([7, 8, 9])
-
-    max_displacement = 30
-    allowable_stress = 355
-    print(
-        analyze_truss(
-            A,
-            Connect,
-            forces,
-            Node,
-            restrains,
-            0.00000785,
-            max_displacement,
-            allowable_stress,
-            plot_flag=1,
-        )
-    )
