@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
 
 def grey_wolf_optimization(
@@ -9,7 +8,7 @@ def grey_wolf_optimization(
     dim,
     bounds,
     connectivity_matrix,
-    force_nodes,
+    forces,
     node_coordinates,
     restrained_nodes,
     material_density,
@@ -17,45 +16,23 @@ def grey_wolf_optimization(
     allowable_stress,
     plot_flag,
 ):
-    """
-    Grey Wolf Optimization algorithm to minimize truss_penalized_weight by changing cross-sectional areas of truss elements.
-
-    Parameters:
-    num_wolves (int): Number of wolves in the population.
-    max_iter (int): Maximum number of iterations.
-    dim (int): Number of dimensions (number of cross-sectional areas).
-    bounds (tuple): Tuple containing lower and upper bounds for the cross-sectional areas.
-    connectivity_matrix (np.ndarray): Connectivity matrix defining the elements and their nodes.
-    force_nodes (np.ndarray): Array of nodes where external forces are applied.
-    node_coordinates (np.ndarray): Array of coordinates of the nodes.
-    restrained_nodes (np.ndarray): Array of nodes where displacements are restrained.
-    max_displacement (float): Maximum allowable displacement (default is 3 mm).
-    allowable_stress (float): Maximum allowable stress (default is 2160 N/mm2).
-
-    Returns:
-    np.ndarray: Best solution found (optimized cross-sectional areas).
-    float: Best fitness value (minimum truss_penalized_weight).
-    """
-    # Initialize population
     alpha_pos = np.zeros(dim)
     alpha_score = float("inf")
     beta_pos = np.zeros(dim)
     beta_score = float("inf")
     delta_pos = np.zeros(dim)
     delta_score = float("inf")
+    trends = []
 
     positions = np.random.uniform(bounds[0], bounds[1], (num_wolves, dim))
 
-    # Optimization loop
     for iter in range(max_iter):
         for i in range(num_wolves):
-            # Calculate fitness
             cross_sectional_areas = positions[i]
-
             fitness, weight = cost_function(
                 cross_sectional_areas,
                 connectivity_matrix,
-                force_nodes,
+                forces,
                 node_coordinates,
                 restrained_nodes,
                 material_density,
@@ -64,7 +41,6 @@ def grey_wolf_optimization(
                 plot_flag,
             )
 
-            # Update alpha, beta, and delta
             if fitness < alpha_score:
                 delta_score = beta_score
                 delta_pos = beta_pos.copy()
@@ -81,8 +57,7 @@ def grey_wolf_optimization(
                 delta_score = fitness
                 delta_pos = cross_sectional_areas.copy()
 
-        # Update positions
-        a = 2 - iter * (2 / max_iter)  # a decreases linearly from 2 to 0
+        a = 2 - iter * (2 / max_iter)
 
         for i in range(num_wolves):
             for j in range(dim):
@@ -106,36 +81,8 @@ def grey_wolf_optimization(
 
                 positions[i, j] = (X1 + X2 + X3) / 3
 
-        # Ensure positions are within bounds
         positions = np.clip(positions, bounds[0], bounds[1])
-        print(alpha_score, weight)
+        trends.append((alpha_score, weight))
+        print(f"Iteration {iter}: Best fitness = {alpha_score}")
 
-    return alpha_pos, alpha_score
-
-
-if __name__ == "__main__":
-    # Example usage (the user should provide actual input values for these):
-    # Define problem parameters
-    evaluation_count = 0
-    num_wolves = 10
-    max_iter = 100
-    dim = 10  # Number of truss elements (this should match the number of elements in your truss)
-    bounds = (0.1, 10.0)  # Example bounds for cross-sectional areas
-    connectivity_matrix = np.array([...])
-    force_nodes = np.array([...])
-    node_coordinates = np.array([...])
-    restrained_nodes = np.array([...])
-
-    # Run GWO
-    best_solution, best_fitness = grey_wolf_optimization(
-        num_wolves,
-        max_iter,
-        dim,
-        bounds,
-        connectivity_matrix,
-        force_nodes,
-        node_coordinates,
-        restrained_nodes,
-    )
-    print("Best solution (cross-sectional areas):", best_solution)
-    print("Best fitness (truss penalized weight):", best_fitness)
+    return alpha_pos, alpha_score, trends
