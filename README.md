@@ -13,10 +13,11 @@ Truss analysis is based on several key assumptions:
 3. **Members are Axially Loaded**: Members carry only axial forces, with no bending moments or shear forces.
 4. **Small Deformations**: Deformations are small enough that members stay within their elastic limit.
 
-### 3. Types of Trusses
-Trusses can be classified into two main types based on their geometry and load-carrying behavior:
-1. **Plane Trusses**: Lie in a single plane and are used in two-dimensional structural applications.
-2. **Space Trusses**: Extend into three dimensions and are used for complex structures like space frames.
+### 3. Degrees of Freedom
+The degrees of freedom (DOF) for a truss member refer to the independent displacements and rotations that can occur at the joints (nodes) where the members are connected. Typically, for a 2D truss, each node has two translational degrees of freedom: one in the $x$-direction and one in the $y$-direction. This means each node can move horizontally and vertically. Therefore, for a single truss member connecting two nodes, there are a total of four degrees of freedom, corresponding to the horizontal and vertical displacements at each end of the member. These are shown in the below image as $d_1x$, $d_2x$, $d_1y$, and $d_2y$.
+
+![image](https://github.com/farshadpasbani/Truss-weight-optimization/assets/40645548/e27cefb1-5b93-4f5d-89a9-59d36550bbad)
+
 
 ### 4. Structural Analysis of Trusses
 The analysis of trusses typically involves the following steps:
@@ -51,8 +52,7 @@ where:
 - $\( A \)$ is the cross-sectional area of the member.
 - $\( L \)$ is the length of the member.
 
-As truss members do not undergo shear or bending, it can be assumed that $\( \hat{f}_1y \) = \( \hat{f}_2y \) = 0$. However, this does not prevent the nodes to displace in $\( \hat{y} \)$-axis.
-Each truss member's stiffness matrix represents its resistance to deformation under axial loads. For a truss element, the local stiffness matrix $\( k \)$ in local coordinates can be derived as:
+As truss members do not undergo shear or bending, it can be assumed that $\( \hat{f}_1y \) = \( \hat{f}_2y \) = 0$. For a truss element, the local stiffness matrix $\( k \)$ in local coordinates can be derived as:
 
 ```math
 k = \frac{EA}{L} \begin{bmatrix}
@@ -115,9 +115,49 @@ C \cdot S & S^2 & -C \cdot S & -S^2 \\
 -C \cdot S & -S^2 & C \cdot S & S^2
 \end{bmatrix}
 ```
+This allows calculating the stiffness matrix of truss elements directly in global coordinates.
+
+In this code, length, $\cos(\theta)$, and $\sin(\theta)$ are calculated as:
+```python
+    # Compute element lengths and direction cosines
+    element_lengths = np.linalg.norm(node_j_coords - node_i_coords, axis=1)
+    cos_theta = (node_j_coords[:, 0] - node_i_coords[:, 0]) / element_lengths
+    sin_theta = (node_j_coords[:, 1] - node_i_coords[:, 1]) / element_lengths
+```
+And these are then passed into ```compute_element_stiffness``` function to calculate the global stiffness matrix of the element:
+```python
+def compute_element_stiffness(E, A, length, C, S):
+    """
+    Compute the stiffness matrix for a truss element.
+
+    Parameters:
+    E (float): Young's modulus of the material (N/mm2).
+    A (float): Cross-sectional area of the element (mm2).
+    length (float): Length of the element (mm).
+    C (float): Cosine of the angle between the element and the global x-axis.
+    S (float): Sine of the angle between the element and the global y-axis.
+
+    Returns:
+    np.ndarray: 4x4 global stiffness matrix for the element.
+    """
+    return (
+        E
+        * A
+        / length
+        * np.array(
+            [
+                [C**2, C * S, -(C**2), -C * S],
+                [C * S, S**2, -C * S, -(S**2)],
+                [-(C**2), -C * S, C**2, C * S],
+                [-C * S, -(S**2), C * S, S**2],
+            ]
+        )
+    )
+```
 
 #### 4.3. Assembly of Global Stiffness Matrix
 The global stiffness matrix for the entire truss is assembled by summing the contributions of individual element stiffness matrices into the appropriate positions, based on the connectivity of the nodes.
+This is done by 
 
 #### 4.4. Application of Boundary Conditions
 Boundary conditions are applied by modifying the global stiffness matrix and the load vector to account for supports and constraints. Nodes with specified displacements (restrained nodes) are handled by setting the corresponding rows and columns of the stiffness matrix to enforce the constraints.
@@ -137,5 +177,9 @@ Various methods exist for managing constraints, such as maximum displacement and
 
 For instance, when the calculated stress in a truss member surpasses the allowable stress threshold, we modify the weight of that member by multiplying it with the difference between the allowable stress and the calculated stress. While this technique does not guarantee that the resulting truss fully satisfies all constraints, it ensures that the optimization process progresses toward the optimal solution by penalizing constraint violations.
 
-### 6. Structural Optimization
-Structural optimization involves finding the optimal configuration of a truss to meet certain criteria such as minimum weight, cost, or deflection. Methods like Grey Wolf Optimization (GWO) are used to iteratively improve the design by adjusting parameters like cross-sectional areas of the members while respecting constraints on stresses and displacements.
+---
+
+## Structural Optimization
+Structural optimization involves finding the optimal configuration of a truss to meet certain criteria such as minimum weight, cost, or deflection. Grey Wolf Optimization (GWO) is used to iteratively improve the design by adjusting parameters (cross-sectional areas of the members in here) while respecting constraints on stresses and displacements.
+
+### 1. 
