@@ -7,14 +7,14 @@ def compute_element_stiffness(E, A, length, C, S):
     Compute the stiffness matrix for a truss element.
 
     Parameters:
-    E (float): Young's modulus of the material.
-    A (float): Cross-sectional area of the element.
-    length (float): Length of the element.
-    C (float): Cosine of the angle between the element and the x-axis.
-    S (float): Sine of the angle between the element and the y-axis.
+    E (float): Young's modulus of the material (N/mm2).
+    A (float): Cross-sectional area of the element (mm2).
+    length (float): Length of the element (mm).
+    C (float): Cosine of the angle between the element and the global x-axis.
+    S (float): Sine of the angle between the element and the global y-axis.
 
     Returns:
-    np.ndarray: 4x4 local stiffness matrix for the element.
+    np.ndarray: 4x4 global stiffness matrix for the element.
     """
     return (
         E
@@ -35,7 +35,7 @@ def assemble_global_stiffness(
     global_stiffness_matrix, local_stiffness_matrices, element_dof_indices
 ):
     """
-    Assemble the global stiffness matrix from the local stiffness matrices of all elements.
+    Assemble the global stiffness matrix from the global stiffness matrices of all elements.
 
     Parameters:
     global_stiffness_matrix (np.ndarray): The global stiffness matrix to be updated.
@@ -90,13 +90,13 @@ def analyze_truss(
     Analyze the truss structure to compute its weight considering stress and displacement penalties.
 
     Parameters:
-    cross_sectional_areas (np.ndarray): Array of cross-sectional areas of the truss elements.
+    cross_sectional_areas (np.ndarray): Array of cross-sectional areas of the truss elements (mm2).
     connectivity_matrix (np.ndarray): Connectivity matrix defining the elements and their nodes.
     force_nodes (np.ndarray): Array of nodes where external forces are applied.
     node_coordinates (np.ndarray): Array of coordinates of the nodes.
     restrained_nodes (np.ndarray): Array of nodes where displacements are restrained.
     max_displacement (float): Maximum allowable displacement (default is 3).
-    allowable_stress (float): Maximum allowable stress (default is 2160).
+    allowable_stress (float): Maximum allowable stress (default is 355).
 
     Returns:
     tuple: Computed penalized weight of the truss structure and actual weight.
