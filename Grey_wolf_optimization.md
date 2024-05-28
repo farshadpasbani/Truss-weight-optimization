@@ -26,7 +26,7 @@ positions = np.random.uniform(bounds[0], bounds[1], (num_wolves, dim))
 ```
 
 ### 2. Fitness Evaluation
-Each wolf is assessed based on the structural performance of the truss configuration it represents, calculating weight, displacement, and stress.
+Each wolf is assessed based on the structural performance of the truss configuration it represents, calculating weight, displacement, and stress. `fitness` in this context is the weight of the structure penalized by the amount of constraint violation (e.g. displacement, stress) while `weight` is the total weight of the truss.
 ```python
 fitness, weight = cost_function(
     cross_sectional_areas,
@@ -70,3 +70,14 @@ The process repeats until a stopping criterion (e.g., maximum number of iteratio
 
 ## Results and Visualization
 The alpha position, representing the best truss design, is taken as the optimal solution. Trends such as changes in fitness values and weights over iterations can be visualized to assess the algorithm's effectiveness and convergence behavior.
+
+```python
+def grey_wolf_optimization
+        [...]
+
+        positions = np.clip(positions, bounds[0], bounds[1])
+        trends.append((alpha_score, weight))
+        print(f"Iteration {iter}: Best fitness = {alpha_score}")
+
+    return alpha_pos, alpha_score, trends
+```
