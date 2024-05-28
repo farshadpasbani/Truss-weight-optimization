@@ -24,10 +24,14 @@ def grey_wolf_optimization(
     delta_score = float("inf")
     trends = []
 
-    positions = np.random.uniform(bounds[0], bounds[1], (num_wolves, dim))
+    positions = np.random.uniform(
+        bounds[0], bounds[1], (num_wolves, dim)
+    )  # Initialize population
 
-    for iter in range(max_iter):
-        for i in range(num_wolves):
+    for iter in range(max_iter):  # Main cycle
+        for i in range(
+            num_wolves
+        ):  # Evaluating, re-labeling, and moving wolves based on their performance
             cross_sectional_areas = positions[i]
             fitness, weight = cost_function(
                 cross_sectional_areas,
@@ -41,6 +45,7 @@ def grey_wolf_optimization(
                 plot_flag,
             )
 
+            # Evaluating wolves performance
             if fitness < alpha_score:
                 delta_score = beta_score
                 delta_pos = beta_pos.copy()
@@ -57,9 +62,11 @@ def grey_wolf_optimization(
                 delta_score = fitness
                 delta_pos = cross_sectional_areas.copy()
 
+        # 'a' mimics wolves' ambition in moving within the domain space
+        # It starts from 2 and decreases towards zero in optimization process
         a = 2 - iter * (2 / max_iter)
 
-        for i in range(num_wolves):
+        for i in range(num_wolves):  # Update positions of search agents
             for j in range(dim):
                 r1, r2 = np.random.rand(), np.random.rand()
                 A1 = 2 * a * r1 - a
@@ -79,9 +86,11 @@ def grey_wolf_optimization(
                 D_delta = abs(C3 * delta_pos[j] - positions[i, j])
                 X3 = delta_pos[j] - A3 * D_delta
 
-                positions[i, j] = (X1 + X2 + X3) / 3
+                positions[i, j] = (X1 + X2 + X3) / 3  # Positions updated
 
-        positions = np.clip(positions, bounds[0], bounds[1])
+        positions = np.clip(
+            positions, bounds[0], bounds[1]
+        )  # Ensure positions are within acceptable bounds
         trends.append((alpha_score, weight))
         print(f"Iteration {iter}: Best fitness = {alpha_score}")
 

@@ -5,7 +5,7 @@ from truss_analysis import analyze_truss
 from gwo import grey_wolf_optimization
 from differential_evolution import differential_evolution
 
-Connect = np.array(
+connectivity_matrix = np.array(
     [
         [1, 2],
         [1, 3],
@@ -18,8 +18,8 @@ Connect = np.array(
         [5, 6],
     ]
 )
-forces = [(0, 0, -10000), (2, 0, -10000)]
-Node = np.array(
+applied_forces = [(0, 0, -10000), (2, 0, -10000)]
+node_coordinates = np.array(
     [
         [0, 0],
         [0, 1200],
@@ -29,43 +29,43 @@ Node = np.array(
         [2400, 1200],
     ]
 )
-restrains = np.array([5, 6])
+restrained_nodes = np.array([5, 6])
 num_agents = 10
-max_iter = 100
-bounds = (10, 1000)
+max_iterations = 100
+cross_section_bounds = (10, 1000)
 material_density = 0.0000078  # kg/mm3
-max_displacement = 4
-allowable_stress = 35500
+max_allowable_displacement = 4
+max_allowable_stress = 355
 
 optimized_truss_gwo, fitness_gwo, trends_gwo = grey_wolf_optimization(
     analyze_truss,
     num_agents,
-    max_iter,
-    len(Connect),
-    bounds,
-    Connect,
-    forces,
-    Node,
-    restrains,
+    max_iterations,
+    len(connectivity_matrix),
+    cross_section_bounds,
+    connectivity_matrix,
+    applied_forces,
+    node_coordinates,
+    restrained_nodes,
     material_density,
-    max_displacement,
-    allowable_stress,
+    max_allowable_displacement,
+    max_allowable_stress,
     0,
 )
 
 optimized_truss_de, fitness_de, trends_de = differential_evolution(
     analyze_truss,
     num_agents,
-    max_iter,
-    len(Connect),
-    bounds,
-    Connect,
-    forces,
-    Node,
-    restrains,
+    max_iterations,
+    len(connectivity_matrix),
+    cross_section_bounds,
+    connectivity_matrix,
+    applied_forces,
+    node_coordinates,
+    restrained_nodes,
     material_density,
-    max_displacement,
-    allowable_stress,
+    max_allowable_displacement,
+    max_allowable_stress,
     0,
 )
 
@@ -76,7 +76,7 @@ print("DE Best Fitness:", fitness_de)
 
 
 def plot_all_trends(trends_gwo, trends_de):
-    iterations = range(max_iter)
+    iterations = range(max_iterations)
     gwo_penalized_weights, gwo_weights = zip(*trends_gwo)
     de_penalized_weights, de_weights = zip(*trends_de)
 
@@ -98,25 +98,25 @@ plot_all_trends(trends_gwo, trends_de)
 print("Plotting GWO optimized structure...")
 analyze_truss(
     optimized_truss_gwo,
-    Connect,
-    forces,
-    Node,
-    restrains,
+    connectivity_matrix,
+    applied_forces,
+    node_coordinates,
+    restrained_nodes,
     material_density,
-    max_displacement,
-    allowable_stress,
+    max_allowable_displacement,
+    max_allowable_stress,
     1,
 )
 
 print("Plotting DE optimized structure...")
 analyze_truss(
     optimized_truss_de,
-    Connect,
-    forces,
-    Node,
-    restrains,
+    connectivity_matrix,
+    applied_forces,
+    node_coordinates,
+    restrained_nodes,
     material_density,
-    max_displacement,
-    allowable_stress,
+    max_allowable_displacement,
+    max_allowable_stress,
     1,
 )

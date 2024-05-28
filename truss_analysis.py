@@ -48,21 +48,32 @@ def analyze_truss(
     allowable_stress,
     plot_flag,
 ):
-    num_dof = 2 * len(node_coordinates)
-    youngs_modulus = 210000
+    num_dof = 2 * len(node_coordinates)  # Each node has 2 degrees of freedom
+    youngs_modulus = 210000  # N/mm2 (MPa)
+
+    # Iterate over the list of applied forces.
+    # Each force is defined by the node index and the force components in the x and y directions (fx and fy).
     force_vector = np.zeros(num_dof)
-    for node_idx, fx, fy in forces:
+    for node_idx, fx, fy in forces:  # Adding external forces to force vector
         force_vector[2 * node_idx] = fx
         force_vector[2 * node_idx + 1] = fy
 
+    # Gathering nodal coordinates of each member
     node_i_coords = node_coordinates[connectivity_matrix[:, 0] - 1, :]
     node_j_coords = node_coordinates[connectivity_matrix[:, 1] - 1, :]
 
-    element_lengths = np.linalg.norm(node_j_coords - node_i_coords, axis=1)
-    cos_theta = (node_j_coords[:, 0] - node_i_coords[:, 0]) / element_lengths
-    sin_theta = (node_j_coords[:, 1] - node_i_coords[:, 1]) / element_lengths
+    element_lengths = np.linalg.norm(
+        node_j_coords - node_i_coords, axis=1
+    )  # Calculate length of members
+    cos_theta = (
+        node_j_coords[:, 0] - node_i_coords[:, 0]
+    ) / element_lengths  # Calculate Cos(theta)
+    sin_theta = (
+        node_j_coords[:, 1] - node_i_coords[:, 1]
+    ) / element_lengths  # Calculate Sin(theta)
 
-    local_stiffness_matrices = np.array(
+    # Compute stiffness matrix of each element in global coordinates
+    member_stiffness_matrices = np.array(
         [
             compute_element_stiffness(
                 youngs_modulus,
@@ -75,7 +86,9 @@ def analyze_truss(
         ]
     )
 
-    global_stiffness_matrix = np.zeros((num_dof, num_dof))
+    # Truss stiffness matrix dimension is DoF*DoF
+    # For each truss member an array is created that signposts its stiffness location within the truss stiffness matrix
+    truss_stiffness_matrix = np.zeros((num_dof, num_dof))
     element_dof_indices = np.array(
         [
             [
@@ -88,16 +101,25 @@ def analyze_truss(
         ]
     )
 
-    global_stiffness_matrix = assemble_global_stiffness(
-        global_stiffness_matrix, local_stiffness_matrices, element_dof_indices
-    )
-    avg_diagonal = np.mean(np.diag(global_stiffness_matrix))
-    global_stiffness_matrix = apply_boundary_conditions(
-        global_stiffness_matrix, restrained_nodes, avg_diagonal
+    # Assemble truss stiffness matrix
+    truss_stiffness_matrix = assemble_global_stiffness(
+        truss_stiffness_matrix, member_stiffness_matrices, element_dof_indices
     )
 
-    displacements = np.linalg.solve(global_stiffness_matrix, force_vector)
+    # Apply boundary conditions to the global stiffness matrix.
+    # This step enforces the constraints at the nodes which are fixed (restrained),
+    # effectively removing degrees of freedom for these nodes.
+    # The avg_diagonal value is used to replace the diagonal elements
+    # for the restrained nodes to ensure numerical stability.
+    avg_diagonal = np.mean(np.diag(truss_stiffness_matrix))
+    truss_stiffness_matrix = apply_boundary_conditions(
+        truss_stiffness_matrix, restrained_nodes, avg_diagonal
+    )
 
+    # Solve Kd = F for d
+    displacements = np.linalg.solve(truss_stiffness_matrix, force_vector)
+
+    # Plot the truss in deformed and un-deformed states
     if plot_flag == 1:
         plt.figure(figsize=(10, 8))
         ax = plt.gca()
@@ -192,23 +214,26 @@ def analyze_truss(
         plt.legend()
         plt.show()
 
+    # Calculate element stresses
     element_stresses = np.zeros((len(connectivity_matrix), 4))
     for i in range(len(connectivity_matrix)):
         dof_indices = element_dof_indices[i]
         element_stresses[i, :] = (
             1
             / cross_sectional_areas[i]
-            * np.dot(local_stiffness_matrices[i], displacements[dof_indices].flatten())
+            * np.dot(member_stiffness_matrices[i], displacements[dof_indices].flatten())
         )
 
     element_stress_magnitudes = np.sqrt(np.sum(element_stresses[:, :2] ** 2, axis=1))
     demand_capacity_ratios = element_stress_magnitudes / allowable_stress
 
+    # Calculate stress and displacement penalties
     demand_capacity = np.abs(demand_capacity_ratios)
     stress_penalty = np.maximum(1, demand_capacity**2)
     displacement_penalty = np.maximum(
         1, np.max(np.abs(displacements)) - max_displacement
     )
+    # Compute the penalized weight of the truss using the calculated penalties
     truss_penalized_weight = (
         np.sum(
             displacement_penalty**2
